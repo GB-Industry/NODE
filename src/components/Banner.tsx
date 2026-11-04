@@ -18,8 +18,11 @@ export function Banner() {
         <h1 className="wordmark">
           NODE<span className="wordmark-dot">.</span>
         </h1>
-        <p className="banner-line">미래 국가기관 인사발령 민원실</p>
-        <p className="banner-sub">국가개발고용기구 · National Organization for Development &amp; Employment</p>
+        {/* 머리글자가 곧 NODE: 파랑으로 짚어 준다 */}
+        <p className="banner-line" lang="en">
+          <b>N</b>ational <b>O</b>rganization for <b>D</b>evelopment &amp; <b>E</b>mployment
+        </p>
+        <p className="banner-sub">국가개발고용기구 · 국가 고용 발전과 인재 개발을 총괄하는 기구</p>
       </div>
     </header>
   );

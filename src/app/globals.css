@@ -387,7 +387,12 @@ u {
   font-weight: 700;
   font-size: 24px;
   line-height: 1.2;
+  letter-spacing: 0.01em;
   color: var(--ink);
+}
+
+.banner-line b {
+  color: var(--link);
 }
 
 .banner-sub {
@@ -1029,12 +1034,12 @@ hr {
     height: 40px;
   }
 
-  .banner-sub {
-    display: none;
-  }
-
   .wordmark {
     font-size: 48px;
+  }
+
+  .banner-line {
+    font-size: 12px;
   }
 
   .cell-agency {

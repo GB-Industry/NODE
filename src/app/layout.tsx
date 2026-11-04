@@ -21,13 +21,13 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "NODE 국가개발고용기구 · 미래 국가기관 인사발령 민원실",
+  title: "NODE 국가개발고용기구 · National Organization for Development & Employment",
   description:
     "은하간 실종천체 수색본부부터 인공지능 정서상담재단까지. 미래에 생길지도 모를 국가기관의 부서·직급·연봉을 무작위로 발령받아 보세요. 하루 5회 신청 가능.",
   keywords: ["NODE", "국가개발고용기구", "기관 이름 생성기", "미래 국가기관", "인사발령", "직업 뽑기", "연봉 뽑기"],
   openGraph: {
     title: "NODE 국가개발고용기구",
-    description: "미래 국가기관 인사발령 민원실. 오늘 당신은 어느 기관으로 발령될까요?",
+    description: "국가 고용 발전과 인재 개발을 총괄하는 NODE 국가개발고용기구. 오늘 당신은 어느 기관으로 발령될까요?",
     locale: "ko_KR",
     type: "website",
   },
