@@ -26,7 +26,8 @@
 
   --font-chrome-stack: var(--font-chrome), "Gulim", "굴림", sans-serif;
   --font-page-stack: var(--font-page), "Gulim", "굴림", sans-serif;
-  --font-banner-stack: var(--font-chrome), "Gulim", "굴림", sans-serif;
+  /* 굵은 한글 제목: 픽셀 굵은체는 "통"과 "동"이 같은 모양이 되어 도현을 쓴다 */
+  --font-heading-stack: var(--font-seal), "Gulim", "굴림", sans-serif;
 
   --bevel-out: inset -1px -1px var(--chrome-dark), inset 1px 1px var(--chrome-light), inset -2px -2px var(--chrome-shadow),
     inset 2px 2px var(--chrome-mid);
@@ -373,7 +374,7 @@ u {
 
 .wordmark {
   margin: 0;
-  font-family: var(--font-banner-stack);
+  font-family: var(--font-chrome-stack);
   font-weight: 700;
   font-size: 72px;
   line-height: 0.95;
@@ -383,7 +384,7 @@ u {
 
 .banner-line {
   margin: 6px 0 0;
-  font-family: var(--font-banner-stack);
+  font-family: var(--font-chrome-stack);
   font-weight: 700;
   font-size: 24px;
   line-height: 1.2;
@@ -491,9 +492,9 @@ a:hover {
 
 .section-title {
   margin: 4px 0 12px;
-  font-family: var(--font-banner-stack);
-  font-weight: 700;
-  font-size: 24px;
+  font-family: var(--font-heading-stack);
+  font-weight: 400;
+  font-size: 28px;
   line-height: 1.2;
   color: var(--navy);
 }
@@ -550,9 +551,9 @@ hr {
 }
 
 .notice-head {
-  font-family: var(--font-banner-stack);
-  font-weight: 700;
-  font-size: 24px;
+  font-family: var(--font-heading-stack);
+  font-weight: 400;
+  font-size: 28px;
   padding: 10px 12px !important;
 }
 
@@ -601,9 +602,9 @@ hr {
 }
 
 .cell-agency {
-  font-family: var(--font-banner-stack);
-  font-weight: 700;
-  font-size: 36px;
+  font-family: var(--font-heading-stack);
+  font-weight: 400;
+  font-size: 38px;
   line-height: 1.2;
   color: var(--navy);
 }
@@ -614,9 +615,9 @@ hr {
 }
 
 .cell-strong {
-  font-family: var(--font-banner-stack);
-  font-weight: 700;
-  font-size: 24px;
+  font-family: var(--font-heading-stack);
+  font-weight: 400;
+  font-size: 28px;
 }
 
 .cell-strong .blank {
@@ -625,9 +626,9 @@ hr {
 }
 
 .cell-money {
-  font-family: var(--font-banner-stack);
-  font-weight: 700;
-  font-size: 24px;
+  font-family: var(--font-heading-stack);
+  font-weight: 400;
+  font-size: 28px;
   color: var(--red);
   font-variant-numeric: tabular-nums;
 }
@@ -769,9 +770,9 @@ hr {
   border: 0;
   background: var(--chrome);
   box-shadow: var(--bevel-out);
-  font-family: var(--font-banner-stack);
-  font-weight: 700;
-  font-size: 24px;
+  font-family: var(--font-heading-stack);
+  font-weight: 400;
+  font-size: 28px;
   line-height: 1;
   color: var(--ink);
   cursor: pointer;

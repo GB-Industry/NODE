@@ -18,7 +18,7 @@ const galmuri14 = localFont({
   display: "swap",
 });
 
-// 기관 관인 둘레 글씨 전용
+// 굵은 한글 제목과 기관 관인 둘레 글씨
 const seal = Do_Hyeon({
   weight: "400",
   subsets: ["latin"],
