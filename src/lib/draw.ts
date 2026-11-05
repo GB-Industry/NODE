@@ -1,4 +1,5 @@
-import { AGENCIES, RANKS, SPECIAL_POSTS, SPECIAL_POST_CHANCE, TIERS, type AgencyIcon, type Tier } from "./node-data";
+import { AGENCIES, RANKS, SPECIAL_POSTS, SPECIAL_POST_CHANCE, TIERS, type Tier } from "./node-data";
+import type { AgencyIcon } from "./seal-icons";
 
 export type Allowance = { name: string; monthly: number /* 만원 */ };
 
