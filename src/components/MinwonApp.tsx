@@ -478,6 +478,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
                             {appointment && (
                               <AgencySeal
                                 name={appointment.agency}
+                                en={appointment.agencyEn}
                                 icon={appointment.agencyIcon}
                                 ink={appointment.tier.stamp}
                                 className={`agency-seal${stamped ? " is-stamped" : ""}${live ? " is-live" : ""}`}

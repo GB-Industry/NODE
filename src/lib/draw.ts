@@ -9,6 +9,7 @@ export type Appointment = {
   tier: Tier;
   agency: string;
   agencyIcon: AgencyIcon;
+  agencyEn: string;
   department: string;
   rank: string;
   specialPost: string | null;
@@ -90,6 +91,7 @@ export function appointmentFromCode(code: string): Appointment {
     tier,
     agency: agency.name,
     agencyIcon: agency.icon,
+    agencyEn: agency.en,
     department,
     rank: rank.title,
     specialPost: isSpecial ? special.title : null,
