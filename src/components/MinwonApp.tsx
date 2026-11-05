@@ -6,7 +6,20 @@ import { appointmentFromCode, formatManwon, newCode, type Appointment } from "@/
 import { AGENCIES, DAILY_LIMIT, SPECIAL_POST_CHANCE, TIERS } from "@/lib/node-data";
 import AgencySeal from "./AgencySeal";
 import { Banner } from "./Banner";
-import { IconBullet, IconFloppy, IconInfo, IconLink, IconNewDoc, IconOdds, Throbber } from "./PixelIcons";
+import {
+  IconBullet,
+  IconFloppy,
+  IconInfo,
+  IconLink,
+  IconNewDoc,
+  IconOdds,
+  MarkBand,
+  MarkFacebook,
+  MarkKakao,
+  MarkShare,
+  MarkX,
+  Throbber,
+} from "./PixelIcons";
 
 type Phase = "idle" | "connecting" | "receiving" | "done";
 
@@ -756,7 +769,8 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
             <div className="share-grid">
               {KAKAO_KEY && (
                 <button ref={shareFirstRef} type="button" className="big-button small share-btn" onClick={shareKakao}>
-                  카카오톡
+                  <span>카카오톡</span>
+                  <MarkKakao className="share-mark" />
                 </button>
               )}
               <button
@@ -765,31 +779,37 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
                 className="big-button small share-btn"
                 onClick={() => openWindow(`https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`)}
               >
-                X (트위터)
+                <span>X (트위터)</span>
+                <MarkX className="share-mark" />
               </button>
               <button
                 type="button"
                 className="big-button small share-btn"
                 onClick={() => openWindow(`https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}`)}
               >
-                페이스북
+                <span>페이스북</span>
+                <MarkFacebook className="share-mark" />
               </button>
               <button
                 type="button"
                 className="big-button small share-btn"
                 onClick={() => openWindow(`https://band.us/plugin/share?body=${enc(`${shareText}\n${shareUrl}`)}&route=${enc(origin)}`)}
               >
-                네이버 밴드
+                <span>네이버 밴드</span>
+                <MarkBand className="share-mark" />
               </button>
               <button type="button" className="big-button small share-btn" onClick={copyLink}>
-                링크 복사
+                <span>링크 복사</span>
+                <IconLink className="share-mark" />
               </button>
               <button type="button" className="big-button small share-btn" onClick={saveImage}>
-                이미지 저장
+                <span>이미지 저장</span>
+                <IconFloppy className="share-mark" />
               </button>
               {canNativeShare && (
                 <button type="button" className="big-button small share-btn share-wide" onClick={shareNative}>
-                  다른 앱으로 보내기 (이미지 포함)
+                  <span>다른 앱으로 보내기 (이미지 포함)</span>
+                  <MarkShare className="share-mark" />
                 </button>
               )}
             </div>

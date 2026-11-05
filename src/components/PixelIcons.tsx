@@ -10,6 +10,32 @@ const base = {
   "aria-hidden": true,
 };
 
+/** 16×16 격자 문자열을 색별 픽셀 path로 그린다. palette의 글자가 그 색, '.'은 빈칸. */
+function PixelArt({ rows, palette, className }: { rows: string[]; palette: Record<string, string>; className?: string }) {
+  const paths: Record<string, string> = {};
+  rows.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const ch = row[x];
+      if (ch === ".") {
+        x++;
+        continue;
+      }
+      let w = 1;
+      while (x + w < row.length && row[x + w] === ch) w++;
+      paths[ch] = (paths[ch] ?? "") + `M${x} ${y}h${w}v1h-${w}z`;
+      x += w;
+    }
+  });
+  return (
+    <svg {...base} className={className}>
+      {Object.entries(paths).map(([ch, d]) => (
+        <path key={ch} fill={palette[ch]} d={d} />
+      ))}
+    </svg>
+  );
+}
+
 export function IconNewDoc({ className }: IconProps) {
   return (
     <svg {...base} className={className}>
@@ -33,13 +59,31 @@ export function IconFloppy({ className }: IconProps) {
   );
 }
 
+/** 검은 2px 선의 둥근 고리 두 개가 엇갈려 걸린 사슬. */
 export function IconLink({ className }: IconProps) {
   return (
-    <svg {...base} className={className}>
-      <path fill="#000" d="M2 6h5v1H2zM1 7h1v3H1zM2 10h5v1H2zM7 7h1v1H7zM7 9h1v1H7zM9 6h5v1H9zM14 7h1v3h-1zM9 10h5v1H9zM8 7h1v1H8zM8 9h1v1H8z" />
-      <path fill="#00ffff" d="M2 7h5v3H2zM9 7h5v3H9z" />
-      <path fill="#000" d="M5 8h6v1H5z" />
-    </svg>
+    <PixelArt
+      className={className}
+      palette={{ "#": "#000" }}
+      rows={[
+        "................",
+        "................",
+        "................",
+        "..######........",
+        ".########.......",
+        "##......######..",
+        "##.....########.",
+        "##....##......##",
+        "##....##......##",
+        ".########.....##",
+        "..######......##",
+        ".......########.",
+        "........######..",
+        "................",
+        "................",
+        "................",
+      ]}
+    />
   );
 }
 
@@ -85,5 +129,143 @@ export function Throbber({ busy }: { busy: boolean }) {
         <rect x="14" y="2" width="2" height="2" fill="#ffff00" />
       </g>
     </svg>
+  );
+}
+
+/* 공유 창 플랫폼 표시. 각 서비스를 알아볼 수 있도록 대표 색과 모양만 픽셀로 옮겼다. */
+
+export function MarkKakao({ className }: IconProps) {
+  return (
+    <PixelArt
+      className={className}
+      palette={{ Y: "#FEE500", B: "#3A1D1D" }}
+      rows={[
+        ".YYYYYYYYYYYYYY.",
+        "YYYYYYYYYYYYYYYY",
+        "YYYYYYYYYYYYYYYY",
+        "YYYYYBBBBBBYYYYY",
+        "YYYBBBBBBBBBBYYY",
+        "YYBBBBBBBBBBBBYY",
+        "YYBBBBBBBBBBBBYY",
+        "YYBBBBBBBBBBBBYY",
+        "YYBBBBBBBBBBBBYY",
+        "YYYBBBBBBBBBBYYY",
+        "YYYYBBBBBBBBYYYY",
+        "YYYYBBYYYYYYYYYY",
+        "YYYBBYYYYYYYYYYY",
+        "YYYYYYYYYYYYYYYY",
+        "YYYYYYYYYYYYYYYY",
+        ".YYYYYYYYYYYYYY.",
+      ]}
+    />
+  );
+}
+
+export function MarkX({ className }: IconProps) {
+  return (
+    <PixelArt
+      className={className}
+      palette={{ K: "#000000", W: "#FFFFFF" }}
+      rows={[
+        ".KKKKKKKKKKKKKK.",
+        "KKKKKKKKKKKKKKKK",
+        "KKWWWKKKKKKKKWKK",
+        "KKKWWWKKKKKKWKKK",
+        "KKKKWWWKKKKWKKKK",
+        "KKKKKWWWKKWKKKKK",
+        "KKKKKKWWWWKKKKKK",
+        "KKKKKKKWWWKKKKKK",
+        "KKKKKKKWWWWKKKKK",
+        "KKKKKKWKKWWWKKKK",
+        "KKKKKWKKKKWWWKKK",
+        "KKKKWKKKKKKWWWKK",
+        "KKKWKKKKKKKKWWKK",
+        "KKWKKKKKKKKKKWKK",
+        "KKKKKKKKKKKKKKKK",
+        ".KKKKKKKKKKKKKK.",
+      ]}
+    />
+  );
+}
+
+export function MarkFacebook({ className }: IconProps) {
+  return (
+    <PixelArt
+      className={className}
+      palette={{ F: "#1877F2", W: "#FFFFFF" }}
+      rows={[
+        ".FFFFFFFFFFFFFF.",
+        "FFFFFFFFFFFFFFFF",
+        "FFFFFFFFFFFFFFFF",
+        "FFFFFFFFWWWWFFFF",
+        "FFFFFFFWWWWWFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFWWWWWWWFFFF",
+        "FFFFFWWWWWWWFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFFFWWWFFFFFF",
+        "FFFFFFFWWWFFFFFF",
+        ".FFFFFFWWWFFFFF.",
+      ]}
+    />
+  );
+}
+
+export function MarkBand({ className }: IconProps) {
+  return (
+    <PixelArt
+      className={className}
+      palette={{ G: "#1EC800", W: "#FFFFFF" }}
+      rows={[
+        ".GGGGGGGGGGGGGG.",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGWWWGGGGGGGGG",
+        "GGGGWWWGGGGGGGGG",
+        "GGGGWWWGGGGGGGGG",
+        "GGGGWWWWWWWGGGGG",
+        "GGGGWWWWWWWWGGGG",
+        "GGGGWWWGGGWWWGGG",
+        "GGGGWWWGGGWWWGGG",
+        "GGGGWWWGGGWWWGGG",
+        "GGGGWWWWWWWWGGGG",
+        "GGGGWWWWWWWGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        "GGGGGGGGGGGGGGGG",
+        ".GGGGGGGGGGGGGG.",
+      ]}
+    />
+  );
+}
+
+/** 상자에서 위로 나가는 화살표: 휴대폰 기본 공유. */
+export function MarkShare({ className }: IconProps) {
+  return (
+    <PixelArt
+      className={className}
+      palette={{ "#": "#000" }}
+      rows={[
+        "................",
+        ".......##.......",
+        "......####......",
+        ".....######.....",
+        "....##.##.##....",
+        ".......##.......",
+        ".......##.......",
+        ".......##.......",
+        ".####..##..####.",
+        ".##....##....##.",
+        ".##....##....##.",
+        ".##..........##.",
+        ".##..........##.",
+        ".##############.",
+        ".##############.",
+        "................",
+      ]}
+    />
   );
 }
