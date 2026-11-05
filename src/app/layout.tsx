@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Do_Hyeon } from "next/font/google";
 import "./globals.css";
 
 const galmuri11 = localFont({
@@ -14,6 +15,15 @@ const galmuri11 = localFont({
 const galmuri14 = localFont({
   src: "../fonts/Galmuri14.woff2",
   variable: "--font-page",
+  display: "swap",
+});
+
+// 기관 관인 둘레 글씨 전용
+const seal = Do_Hyeon({
+  weight: "400",
+  subsets: ["latin"],
+  preload: false,
+  variable: "--font-seal",
   display: "swap",
 });
 
@@ -40,7 +50,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ko" className={`${galmuri11.variable} ${galmuri14.variable}`}>
+    <html lang="ko" className={`${galmuri11.variable} ${galmuri14.variable} ${seal.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -525,7 +525,9 @@ function iconPath(rows: string[]) {
 const SIZE = 128;
 const C = SIZE / 2;
 const NAME_R = 43; // 기관 이름 바닥선 반지름 (글자는 바깥쪽으로 선다)
-const NAME_MAX = 228; // 기관 이름이 차지할 수 있는 최대 호 길이(px)
+const NAME_MAX = 228;
+// 둘레 글씨는 도현. 픽셀 글꼴은 원을 따라 기울면 획이 뭉개져(통→동) 기울어도 또렷한 글꼴을 쓴다.
+const NAME_SIZE = 14; // 기관 이름이 차지할 수 있는 최대 호 길이(px)
 const ICON_SCALE = 2;
 
 export default function AgencySeal({
@@ -542,7 +544,7 @@ export default function AgencySeal({
   const nameId = `seal-name-${icon}`;
   // 이름: 아래에서 시작해 시계 방향 한 바퀴, 50% 지점이 꼭대기.
   const namePath = `M${C} ${C + NAME_R}A${NAME_R} ${NAME_R} 0 1 1 ${C} ${C - NAME_R}A${NAME_R} ${NAME_R} 0 1 1 ${C} ${C + NAME_R}`;
-  const tooLong = name.length * 12 > NAME_MAX;
+  const tooLong = name.length * NAME_SIZE > NAME_MAX;
   const half = (GRID * ICON_SCALE) / 2;
 
   return (
@@ -554,7 +556,7 @@ export default function AgencySeal({
       <circle cx={C} cy={C} r={C - 8} fill="none" stroke={ink} strokeWidth="1" />
       <circle cx={C} cy={C} r={38} fill="none" stroke={ink} strokeWidth="2" />
       <circle cx={C} cy={C} r={35} fill="none" stroke={ink} strokeWidth="2" strokeDasharray="2 3" />
-      <text fill={ink} style={{ fontFamily: "var(--font-chrome)", fontWeight: 700, fontSize: 12 }}>
+      <text fill={ink} style={{ fontFamily: "var(--font-seal)", fontSize: NAME_SIZE }}>
         <textPath
           href={`#${nameId}`}
           startOffset="50%"
