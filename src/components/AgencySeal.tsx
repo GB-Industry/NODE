@@ -1,5 +1,5 @@
-// 기관 원형 관인. 바깥 고리에 기관 이름, 아래에 "NODE 산하", 가운데에 분야 픽셀 그림.
-// 잉크는 등급 색 한 가지. 화려함은 색이 아니라 세밀함(점묘 음영, 점선 고리, 마름모 장식)으로 낸다.
+// 기관 원형 관인. 바깥 고리에 기관 이름, 가운데에 분야 픽셀 그림.
+// 잉크는 등급 색 한 가지. 화려함은 색이 아니라 세밀함(점묘 음영, 이중 고리, 점선 고리)으로 낸다.
 
 import type { AgencyIcon } from "@/lib/node-data";
 
@@ -473,6 +473,32 @@ const ICONS: Record<AgencyIcon, string[]> = {
     "........................",
     "........................",
   ],
+  penguin: [
+    "........................",
+    ".........######.........",
+    ".......##########.......",
+    "......############......",
+    ".....######..######.....",
+    "....#####......#####....",
+    "....####..#..#..####....",
+    "....####..#..#..####....",
+    "....####...##...####....",
+    "....####+.####.+####....",
+    "...######......######...",
+    "..#######......#######..",
+    ".#######........#######.",
+    ".######..........######.",
+    "..#####..........#####..",
+    "...####..........####...",
+    "...####..........####...",
+    "...#####........#####...",
+    "....#####......#####....",
+    ".....######..######.....",
+    "......############......",
+    ".....####......####.....",
+    "....#####......#####....",
+    "........................",
+  ],
 };
 
 const GRID = 24;
@@ -499,17 +525,8 @@ function iconPath(rows: string[]) {
 const SIZE = 128;
 const C = SIZE / 2;
 const NAME_R = 43; // 기관 이름 바닥선 반지름 (글자는 바깥쪽으로 선다)
-const FOOT_R = 51; // 아래 문구 바닥선 반지름 (글자는 안쪽으로 선다)
-const NAME_MAX = 196; // 기관 이름이 차지할 수 있는 최대 호 길이(px)
+const NAME_MAX = 228; // 기관 이름이 차지할 수 있는 최대 호 길이(px)
 const ICON_SCALE = 2;
-
-/** 원 위의 각도(꼭대기 0°, 시계 방향)에 놓인 4px 픽셀 마름모. */
-function diamond(deg: number, r: number) {
-  const a = (deg * Math.PI) / 180;
-  const x = Math.round(C + r * Math.sin(a));
-  const y = Math.round(C - r * Math.cos(a));
-  return `M${x - 1} ${y - 3}h2v2h2v2h-2v2h-2v-2h-2v-2h2z`;
-}
 
 export default function AgencySeal({
   name,
@@ -523,11 +540,8 @@ export default function AgencySeal({
   className?: string;
 }) {
   const nameId = `seal-name-${icon}`;
-  const footId = `seal-foot-${icon}`;
   // 이름: 아래에서 시작해 시계 방향 한 바퀴, 50% 지점이 꼭대기.
   const namePath = `M${C} ${C + NAME_R}A${NAME_R} ${NAME_R} 0 1 1 ${C} ${C - NAME_R}A${NAME_R} ${NAME_R} 0 1 1 ${C} ${C + NAME_R}`;
-  // 아래 문구: 꼭대기에서 시작해 반시계 방향 한 바퀴, 50% 지점이 바닥(글자가 똑바로 선다).
-  const footPath = `M${C} ${C - FOOT_R}A${FOOT_R} ${FOOT_R} 0 1 0 ${C} ${C + FOOT_R}A${FOOT_R} ${FOOT_R} 0 1 0 ${C} ${C - FOOT_R}`;
   const tooLong = name.length * 12 > NAME_MAX;
   const half = (GRID * ICON_SCALE) / 2;
 
@@ -535,7 +549,6 @@ export default function AgencySeal({
     <svg className={className} width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden>
       <defs>
         <path id={nameId} d={namePath} />
-        <path id={footId} d={footPath} />
       </defs>
       <circle cx={C} cy={C} r={C - 3} fill="none" stroke={ink} strokeWidth="4" />
       <circle cx={C} cy={C} r={C - 8} fill="none" stroke={ink} strokeWidth="1" />
@@ -551,12 +564,6 @@ export default function AgencySeal({
           {name}
         </textPath>
       </text>
-      <text fill={ink} style={{ fontFamily: "var(--font-chrome)", fontWeight: 700, fontSize: 12 }}>
-        <textPath href={`#${footId}`} startOffset="50%" textAnchor="middle">
-          NODE 산하
-        </textPath>
-      </text>
-      <path d={`${diamond(136, 47)}${diamond(224, 47)}`} fill={ink} shapeRendering="crispEdges" />
       <path
         d={iconPath(ICONS[icon])}
         fill={ink}

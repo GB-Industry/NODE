@@ -27,7 +27,7 @@ export const DAILY_LIMIT = 5;
 
 export type AgencyIcon =
   | "planet" | "rocket" | "wave" | "robot" | "cat" | "cloud" | "clock" | "leaf" | "moon"
-  | "sun" | "pillow" | "signal" | "sock" | "coin" | "snow" | "arrow" | "disk" | "doc";
+  | "sun" | "pillow" | "signal" | "sock" | "coin" | "snow" | "arrow" | "disk" | "doc" | "penguin";
 
 export type Agency = {
   name: string;
@@ -67,7 +67,7 @@ export const AGENCIES: Agency[] = [
   { name: "행성 테라포밍 인허가청", tier: "cyan", icon: "planet", departments: ["대기조성 심사과", "바다 신설 허가팀", "산맥 건축과"], allowances: ["행성규모 책임수당", "인허가 지연 사과비"] },
   { name: "로봇노동조합 단체교섭위원회", tier: "cyan", icon: "robot", departments: ["충전시간 협상과", "강제업데이트 저지팀", "휴머노이드 복지과"], allowances: ["교섭 장기화 수당", "논리회로 과열 보전금"] },
   { name: "꿈 저작권보호위원회", tier: "cyan", icon: "doc", departments: ["꿈 표절 심의과", "악몽 유통 단속팀", "자각몽 라이선스과"], allowances: ["야간 상시대기 수당", "잠꼬대 녹취비"] },
-  { name: "남극 펭귄 통상교섭본부", tier: "cyan", icon: "snow", departments: ["생선 관세 협상과", "빙하 영토 조정팀", "뒤뚱걸음 의전반"], allowances: ["혹한 근무수당", "패딩 지급비"] },
+  { name: "남극 펭귄 통상교섭본부", tier: "cyan", icon: "penguin", departments: ["생선 관세 협상과", "빙하 영토 조정팀", "뒤뚱걸음 의전반"], allowances: ["혹한 근무수당", "패딩 지급비"] },
   { name: "지구 자전속도 관리공단", tier: "cyan", icon: "clock", departments: ["하루 길이 측정과", "어지럼증 민원팀", "윤초 비상대응반"], allowances: ["멀미 보전금", "야간 자전 감시수당"] },
 
   // 파랑
