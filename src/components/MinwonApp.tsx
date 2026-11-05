@@ -145,6 +145,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const [popupOpen, setPopupOpen] = useState(false);
   const [stamped, setStamped] = useState(Boolean(sharedCode));
   const [shareOpen, setShareOpen] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
   const [issuedOn, setIssuedOn] = useState<Date | null>(() => parseDateParam(sharedDate));
   const [live, setLive] = useState(false); // 이번 방문에서 직접 신청한 결과일 때만 수신·날인 동작을 재생한다
 
@@ -156,7 +157,6 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const applyButtonRef = useRef<HTMLButtonElement>(null);
   const shareFirstRef = useRef<HTMLButtonElement>(null);
   const shareReturnRef = useRef<HTMLElement | null>(null);
-  const noticeFileRef = useRef<Promise<File | null> | null>(null);
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -262,38 +262,20 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     });
   }, [busy, remaining, stored.used]);
 
-  /** 발령 통지서 표를 PNG 파일로 만든다. */
-  const makeNoticeFile = useCallback(async (): Promise<File | null> => {
-    if (!noticeRef.current || !appointment) return null;
+  const saveImage = useCallback(async () => {
+    if (!noticeRef.current || !appointment) return;
+    setStatus("이미지로 저장하는 중...");
     try {
       const dataUrl = await toPng(noticeRef.current, { pixelRatio: 2, backgroundColor: "#ffffff" });
-      const blob = await (await fetch(dataUrl)).blob();
-      return new File([blob], `NODE_발령통지_${appointment.code}.png`, { type: "image/png" });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `NODE_발령통지_${appointment.code}.png`;
+      a.click();
+      setStatus("발령 통지서를 이미지로 저장했습니다.");
     } catch {
-      return null;
+      setStatus("이미지를 만들지 못했습니다. 화면을 캡처해 공유해 주세요.");
     }
   }, [appointment]);
-
-  const downloadFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    a.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
-  const saveImage = useCallback(async () => {
-    if (!appointment) return;
-    setStatus("이미지로 저장하는 중...");
-    const file = await makeNoticeFile();
-    if (!file) {
-      setStatus("이미지를 만들지 못했습니다. 화면을 캡처해 공유해 주세요.");
-      return;
-    }
-    downloadFile(file);
-    setStatus("발령 통지서를 이미지로 저장했습니다.");
-  }, [appointment, makeNoticeFile]);
 
   const shareText = appointment
     ? `나는 ${appointment.agency} ${appointment.department} ${appointment.specialPost ?? appointment.rank}(으)로 발령받았습니다. 당신은 어느 기관으로?`
@@ -305,13 +287,15 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     shareReturnRef.current = document.activeElement as HTMLElement | null;
     setShareOpen(true);
     loadKakao().catch(() => {});
-    // 이미지를 미리 만들어 둔다. 아이폰 사파리는 누른 뒤 시간이 걸리면 공유 창을 막기 때문이다.
-    noticeFileRef.current = makeNoticeFile();
-  }, [appointment, makeNoticeFile]);
+  }, [appointment]);
 
   const closeShare = useCallback(() => {
     setShareOpen(false);
     shareReturnRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
   }, []);
 
   useEffect(() => {
@@ -361,37 +345,24 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     }
   }, [shareText, shareUrl]);
 
-  /**
-   * 통지서를 이미지 파일로 휴대폰 공유 창에 넘긴다(인스타그램·카카오톡·밴드 등 설치된 앱을 고름).
-   * 링크는 이미지와 함께 버려지는 앱이 있어 문구 안에 붙인다. 파일 공유가 안 되는 곳(PC 등)은 저장으로 대신한다.
-   */
-  const shareImage = useCallback(async () => {
+  /** 휴대폰 기본 공유 창: 통지서 이미지까지 함께 넘긴다(지원하지 않으면 링크만). */
+  const shareNative = useCallback(async () => {
     if (!appointment) return;
-    setStatus("공유할 이미지를 준비하는 중...");
-    const file = await (noticeFileRef.current ?? (noticeFileRef.current = makeNoticeFile()));
-    if (!file) {
-      noticeFileRef.current = null;
-      setStatus("이미지를 만들지 못했습니다. 화면을 캡처해 공유해 주세요.");
-      return;
-    }
-    if (navigator.canShare?.({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], text: `${shareText} ${shareUrl}` });
-        setStatus("공유를 마쳤습니다.");
-      } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") {
-          setStatus("완료");
-        } else if (err instanceof DOMException && err.name === "NotAllowedError") {
-          setStatus("이미지가 준비됐습니다. '이미지로 공유'를 한 번 더 눌러 주세요.");
-        } else {
-          setStatus("공유하지 못했습니다. 이미지 저장 후 직접 올려 주세요.");
-        }
+    try {
+      let files: File[] | undefined;
+      if (noticeRef.current) {
+        const dataUrl = await toPng(noticeRef.current, { pixelRatio: 2, backgroundColor: "#ffffff" });
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `NODE_발령통지_${appointment.code}.png`, { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) files = [file];
       }
-      return;
+      await navigator.share({ title: "NODE 인사발령 통지", text: shareText, url: shareUrl, ...(files ? { files } : {}) });
+      setStatus("공유를 마쳤습니다.");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setStatus("공유하지 못했습니다. 링크 복사로 공유해 주세요.");
     }
-    downloadFile(file);
-    setStatus("이 브라우저는 이미지 공유를 지원하지 않아 이미지로 저장했습니다. 휴대폰에서 올려 주세요.");
-  }, [appointment, makeNoticeFile, shareText, shareUrl]);
+  }, [appointment, shareText, shareUrl]);
 
   const tierStyle = useMemo(() => {
     if (!appointment || rows === 0) return undefined;
@@ -795,21 +766,15 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
             <p className="share-lead">
               <strong>{appointment.agency}</strong> 발령 통지서를 어디로 보낼까요?
             </p>
-            <button ref={shareFirstRef} type="button" className="big-button share-btn share-primary" onClick={shareImage}>
-              <span className="share-primary-text">
-                <span className="share-primary-title">이미지로 공유</span>
-                <span className="share-primary-sub">인스타·카톡·밴드·X 등 앱 고르기</span>
-              </span>
-              <MarkShare className="share-mark" />
-            </button>
             <div className="share-grid">
               {KAKAO_KEY && (
-                <button type="button" className="big-button small share-btn" onClick={shareKakao}>
+                <button ref={shareFirstRef} type="button" className="big-button small share-btn" onClick={shareKakao}>
                   <span>카카오톡</span>
                   <MarkKakao className="share-mark" />
                 </button>
               )}
               <button
+                ref={KAKAO_KEY ? undefined : shareFirstRef}
                 type="button"
                 className="big-button small share-btn"
                 onClick={() => openWindow(`https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`)}
@@ -834,15 +799,21 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
                 <MarkBand className="share-mark" />
               </button>
               <button type="button" className="big-button small share-btn" onClick={copyLink}>
-                <span>링크 복사</span>
+                <span>링크 복사 (인스타)</span>
                 <IconLink className="share-mark" />
               </button>
               <button type="button" className="big-button small share-btn" onClick={saveImage}>
                 <span>이미지 저장</span>
                 <IconFloppy className="share-mark" />
               </button>
+              {canNativeShare && (
+                <button type="button" className="big-button small share-btn share-wide" onClick={shareNative}>
+                  <span>다른 앱으로 보내기 (이미지 포함)</span>
+                  <MarkShare className="share-mark" />
+                </button>
+              )}
             </div>
-            <p className="share-note">인스타그램은 &lsquo;이미지로 공유&rsquo;에서 Instagram을 고르면 피드·스토리로 바로 올라갑니다. PC에서는 이미지가 저장됩니다.</p>
+            <p className="share-note">인스타그램은 &lsquo;이미지 저장&rsquo; 후 스토리·게시물로 올려 주세요.</p>
           </div>
         </div>
       )}
