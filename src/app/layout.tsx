@@ -43,6 +43,22 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image", images: ["/og"] },
   alternates: { canonical: "/" },
+  // 검색 등록 소유 확인 코드. 코드를 바꿔도 코드 수정 없이 Vercel 환경 변수만 고치면 된다.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION,
+    other: process.env.NAVER_SITE_VERIFICATION
+      ? { "naver-site-verification": process.env.NAVER_SITE_VERIFICATION }
+      : undefined,
+  },
+};
+
+// 검색 결과에 사이트 이름을 "NODE 국가개발고용기구"로 보이게 한다.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "NODE 국가개발고용기구",
+  alternateName: ["NODE", "National Organization for Development & Employment"],
+  url: siteUrl,
 };
 
 export const viewport: Viewport = {
@@ -52,7 +68,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko" className={`${galmuri11.variable} ${galmuri14.variable} ${seal.variable}`}>
-      <body>{children}</body>
+      <body>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        {children}
+      </body>
     </html>
   );
 }
