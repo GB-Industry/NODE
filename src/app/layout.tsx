@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Do_Hyeon } from "next/font/google";
 import "./globals.css";
+import { SITE_URL as siteUrl } from "@/lib/site-url";
 
 const galmuri11 = localFont({
   src: [
@@ -27,8 +28,6 @@ const seal = Do_Hyeon({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "NODE 국가개발고용기구 · National Organization for Development & Employment",
@@ -40,7 +39,9 @@ export const metadata: Metadata = {
     description: "국가 고용 발전과 인재 개발을 총괄하는 NODE 국가개발고용기구. 오늘 당신은 어느 기관으로 발령될까요?",
     locale: "ko_KR",
     type: "website",
+    images: [{ url: "/og", width: 1200, height: 630 }],
   },
+  twitter: { card: "summary_large_image", images: ["/og"] },
   alternates: { canonical: "/" },
 };
 

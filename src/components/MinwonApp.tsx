@@ -10,6 +10,50 @@ import { IconBullet, IconFloppy, IconInfo, IconLink, IconNewDoc, IconOdds, Throb
 
 type Phase = "idle" | "connecting" | "receiving" | "done";
 
+type KakaoSdk = {
+  isInitialized: () => boolean;
+  init: (key: string) => void;
+  Share: { sendDefault: (settings: Record<string, unknown>) => void };
+};
+
+declare global {
+  interface Window {
+    Kakao?: KakaoSdk;
+  }
+}
+
+const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY;
+const KAKAO_SDK = "https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js";
+
+let kakaoLoading: Promise<KakaoSdk> | null = null;
+
+/** 공유 창을 처음 열 때만 카카오 SDK를 받아 온다. */
+function loadKakao(): Promise<KakaoSdk> {
+  if (!KAKAO_KEY) return Promise.reject(new Error("no kakao key"));
+  if (!kakaoLoading) {
+    kakaoLoading = new Promise((resolve, reject) => {
+      const ready = () => {
+        const k = window.Kakao;
+        if (!k) return reject(new Error("kakao missing"));
+        if (!k.isInitialized()) k.init(KAKAO_KEY);
+        resolve(k);
+      };
+      if (window.Kakao) return ready();
+      const el = document.createElement("script");
+      el.src = KAKAO_SDK;
+      el.async = true;
+      el.crossOrigin = "anonymous";
+      el.onload = ready;
+      el.onerror = () => {
+        kakaoLoading = null;
+        reject(new Error("kakao load failed"));
+      };
+      document.head.appendChild(el);
+    });
+  }
+  return kakaoLoading;
+}
+
 const STORAGE_KEY = "node.minwon.v1";
 const ROW_COUNT = 8; // 발령 통지 표에서 차례로 수신되는 줄 수
 
@@ -87,6 +131,8 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const [origin, setOrigin] = useState("");
   const [popupOpen, setPopupOpen] = useState(false);
   const [stamped, setStamped] = useState(Boolean(sharedCode));
+  const [shareOpen, setShareOpen] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
   const [issuedOn, setIssuedOn] = useState<Date | null>(() => parseDateParam(sharedDate));
   const [live, setLive] = useState(false); // 이번 방문에서 직접 신청한 결과일 때만 수신·날인 동작을 재생한다
 
@@ -96,6 +142,8 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const viewportRef = useRef<HTMLDivElement>(null);
   const popupButtonRef = useRef<HTMLButtonElement>(null);
   const applyButtonRef = useRef<HTMLButtonElement>(null);
+  const shareFirstRef = useRef<HTMLButtonElement>(null);
+  const shareReturnRef = useRef<HTMLElement | null>(null);
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
@@ -216,25 +264,92 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     }
   }, [appointment]);
 
-  const shareLink = useCallback(async () => {
+  const shareText = appointment
+    ? `나는 ${appointment.agency} ${appointment.department} ${appointment.specialPost ?? appointment.rank}(으)로 발령받았습니다. 당신은 어느 기관으로?`
+    : "";
+  const ogImageUrl = appointment && origin ? `${shareUrl.replace(`${origin}/`, `${origin}/og`)}` : "";
+
+  const openShare = useCallback(() => {
     if (!appointment) return;
-    const text = `나는 ${appointment.agency} ${appointment.department} ${appointment.specialPost ?? appointment.rank}(으)로 발령받았습니다.`;
+    shareReturnRef.current = document.activeElement as HTMLElement | null;
+    setShareOpen(true);
+    loadKakao().catch(() => {});
+  }, [appointment]);
+
+  const closeShare = useCallback(() => {
+    setShareOpen(false);
+    shareReturnRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
+  }, []);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    shareFirstRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeShare();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [shareOpen, closeShare]);
+
+  const openWindow = (url: string) => window.open(url, "_blank", "noopener,noreferrer,width=620,height=560");
+  const enc = encodeURIComponent;
+
+  const shareKakao = useCallback(async () => {
+    if (!appointment) return;
     try {
-      if (navigator.share) {
-        await navigator.share({ title: "NODE 인사발령 통지", text, url: shareUrl });
-        setStatus("공유를 마쳤습니다.");
-        return;
-      }
-      await navigator.clipboard.writeText(`${text} ${shareUrl}`);
+      const kakao = await loadKakao();
+      kakao.Share.sendDefault({
+        objectType: "feed",
+        content: {
+          title: `${appointment.agency} 발령 통지`,
+          description: `${appointment.department} · ${appointment.specialPost ?? appointment.rank} · 연봉 ${formatManwon(appointment.salary)}`,
+          imageUrl: ogImageUrl,
+          imageWidth: 1200,
+          imageHeight: 630,
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl },
+        },
+        buttons: [
+          { title: "통지서 보기", link: { mobileWebUrl: shareUrl, webUrl: shareUrl } },
+          { title: "나도 발령받기", link: { mobileWebUrl: origin, webUrl: origin } },
+        ],
+      });
+      setStatus("카카오톡 공유 창을 열었습니다.");
+    } catch {
+      setStatus("카카오톡 공유를 불러오지 못했습니다. 링크 복사로 공유해 주세요.");
+    }
+  }, [appointment, ogImageUrl, origin, shareUrl]);
+
+  const copyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
       setStatus("발령 통지 주소를 클립보드에 복사했습니다.");
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        setStatus("완료");
-        return;
-      }
+    } catch {
       setStatus("복사하지 못했습니다. 주소창의 주소를 직접 복사해 주세요.");
     }
-  }, [appointment, shareUrl]);
+  }, [shareText, shareUrl]);
+
+  /** 휴대폰 기본 공유 창: 통지서 이미지까지 함께 넘긴다(지원하지 않으면 링크만). */
+  const shareNative = useCallback(async () => {
+    if (!appointment) return;
+    try {
+      let files: File[] | undefined;
+      if (noticeRef.current) {
+        const dataUrl = await toPng(noticeRef.current, { pixelRatio: 2, backgroundColor: "#ffffff" });
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `NODE_발령통지_${appointment.code}.png`, { type: "image/png" });
+        if (navigator.canShare?.({ files: [file] })) files = [file];
+      }
+      await navigator.share({ title: "NODE 인사발령 통지", text: shareText, url: shareUrl, ...(files ? { files } : {}) });
+      setStatus("공유를 마쳤습니다.");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setStatus("공유하지 못했습니다. 링크 복사로 공유해 주세요.");
+    }
+  }, [appointment, shareText, shareUrl]);
 
   const tierStyle = useMemo(() => {
     if (!appointment || rows === 0) return undefined;
@@ -304,7 +419,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
               <IconFloppy />
               <span>이미지 저장</span>
             </button>
-            <button type="button" className="tool" onClick={shareLink} disabled={!appointment || busy}>
+            <button type="button" className="tool" onClick={openShare} disabled={!appointment || busy}>
               <IconLink />
               <span>링크 공유</span>
             </button>
@@ -503,7 +618,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
                       <button type="button" className="link-button" onClick={saveImage}>
                         [발령 통지서 이미지로 저장]
                       </button>
-                      <button type="button" className="link-button" onClick={shareLink}>
+                      <button type="button" className="link-button" onClick={openShare}>
                         [친구에게 발령 소식 알리기]
                       </button>
                     </p>
@@ -618,6 +733,67 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
             >
               확인
             </button>
+          </div>
+        </div>
+      )}
+
+      {shareOpen && appointment && (
+        <div className="popup share-popup" role="dialog" aria-modal="false" aria-labelledby="share-title">
+          <div className="titlebar">
+            <span id="share-title" className="titlebar-text">
+              발령 소식 알리기
+            </span>
+            <button type="button" className="tb-btn tb-close" onClick={closeShare} aria-label="닫기">
+              <svg width="8" height="7" viewBox="0 0 8 7" shapeRendering="crispEdges" aria-hidden>
+                <path fill="#000" d="M0 0h2v1h1v1h2V1h1V0h2v1H7v1H6v1H5v1h1v1h1v1h1v1H6V6H5V5H3v1H2v1H0V6h1V5h1V4h1V3H2V2H1V1H0z" />
+              </svg>
+            </button>
+          </div>
+          <div className="share-body">
+            <p className="share-lead">
+              <strong>{appointment.agency}</strong> 발령 통지서를 어디로 보낼까요?
+            </p>
+            <div className="share-grid">
+              {KAKAO_KEY && (
+                <button ref={shareFirstRef} type="button" className="big-button small share-btn" onClick={shareKakao}>
+                  카카오톡
+                </button>
+              )}
+              <button
+                ref={KAKAO_KEY ? undefined : shareFirstRef}
+                type="button"
+                className="big-button small share-btn"
+                onClick={() => openWindow(`https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`)}
+              >
+                X (트위터)
+              </button>
+              <button
+                type="button"
+                className="big-button small share-btn"
+                onClick={() => openWindow(`https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}`)}
+              >
+                페이스북
+              </button>
+              <button
+                type="button"
+                className="big-button small share-btn"
+                onClick={() => openWindow(`https://band.us/plugin/share?body=${enc(`${shareText}\n${shareUrl}`)}&route=${enc(origin)}`)}
+              >
+                네이버 밴드
+              </button>
+              <button type="button" className="big-button small share-btn" onClick={copyLink}>
+                링크 복사
+              </button>
+              <button type="button" className="big-button small share-btn" onClick={saveImage}>
+                이미지 저장
+              </button>
+              {canNativeShare && (
+                <button type="button" className="big-button small share-btn share-wide" onClick={shareNative}>
+                  다른 앱으로 보내기 (이미지 포함)
+                </button>
+              )}
+            </div>
+            <p className="share-note">인스타그램은 &lsquo;이미지 저장&rsquo; 후 스토리·게시물로 올려 주세요.</p>
           </div>
         </div>
       )}

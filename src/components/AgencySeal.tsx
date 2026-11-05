@@ -5,7 +5,7 @@ import { SEAL_ICONS, type AgencyIcon } from "@/lib/seal-icons";
 
 const GRID = 24;
 
-function iconPath(rows: string[]) {
+export function iconPath(rows: string[]) {
   let d = "";
   rows.forEach((row, y) => {
     let x = 0;

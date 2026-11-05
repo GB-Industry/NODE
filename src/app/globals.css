@@ -997,6 +997,51 @@ hr {
   padding: 6px 0 10px;
 }
 
+/* 발령 소식 알리기 창 */
+
+.share-popup {
+  width: min(400px, calc(100vw - 24px));
+}
+
+.tb-close {
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.tb-close:active {
+  box-shadow: var(--bevel-in);
+}
+
+.share-body {
+  padding: 14px 14px 12px;
+  font-size: 12px;
+}
+
+.share-lead {
+  margin: 0 0 12px;
+  line-height: 1.6;
+}
+
+.share-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.share-btn {
+  width: 100%;
+}
+
+.share-wide {
+  grid-column: 1 / -1;
+}
+
+.share-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
 /* ---------- 좁은 화면 ---------- */
 
 @media (max-width: 720px) {
