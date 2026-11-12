@@ -132,6 +132,15 @@ async function renderNotice(node: HTMLElement) {
   ]);
 }
 
+/** 길게 눌러 저장을 막아 두는 앱 속 브라우저(인스타그램, 페이스북, 에브리타임 등). */
+function inAppBrowser() {
+  const ua = navigator.userAgent;
+  return {
+    blocked: /Instagram|FBAN|FBAV|Line\/|everytime/i.test(ua),
+    android: /Android/i.test(ua),
+  };
+}
+
 function untilMidnight(now: Date) {
   const next = new Date(now);
   next.setHours(24, 0, 0, 0);
@@ -160,6 +169,8 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const [shareOpen, setShareOpen] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
   const [savedImage, setSavedImage] = useState<string | null>(null); // 휴대폰: 길게 눌러 저장할 통지서 이미지
+  const [savedFile, setSavedFile] = useState<File | null>(null); // 공유 메뉴의 '이미지 저장'으로 넘길 파일
+  const [inApp, setInApp] = useState({ blocked: false, android: false });
   const [issuedOn, setIssuedOn] = useState<Date | null>(() => parseDateParam(sharedDate));
   const [live, setLive] = useState(false); // 이번 방문에서 직접 신청한 결과일 때만 수신·날인 동작을 재생한다
 
@@ -295,6 +306,10 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
       if (window.matchMedia("(pointer: coarse)").matches) {
         setShareOpen(false);
         setSavedImage(dataUrl);
+        setInApp(inAppBrowser());
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `NODE_발령통지_${appointment.code}.png`, { type: "image/png" });
+        setSavedFile(navigator.canShare?.({ files: [file] }) ? file : null);
         setStatus("이미지를 길게 눌러 저장해 주세요.");
         return;
       }
@@ -806,6 +821,32 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
             </p>
             {/* eslint-disable-next-line @next/next/no-img-element -- 방금 그린 데이터 주소라 next/image가 필요 없다 */}
             <img className="save-image" src={savedImage} alt={`${appointment.agency} 발령 통지서`} />
+            {savedFile && (
+              <button
+                type="button"
+                className="big-button small share-btn save-share"
+                onClick={() => navigator.share({ files: [savedFile] }).catch(() => {})}
+              >
+                <span>공유 메뉴에서 &lsquo;이미지 저장&rsquo;</span>
+                <MarkShare className="share-mark" />
+              </button>
+            )}
+            {inApp.blocked && (
+              <div className="save-help">
+                <p>
+                  길게 눌러도 아무것도 안 뜨면 이 앱이 저장을 막아 둔 것입니다.{" "}
+                  {inApp.android ? "아래 단추로 크롬에서 열어 저장하거나," : "오른쪽 위 ⋯ 메뉴에서 '외부 브라우저로 열기'를 누르거나,"} 이 화면을 캡처해 주세요.
+                </p>
+                {inApp.android && (
+                  <a
+                    className="big-button small save-share"
+                    href={`intent://${shareUrl.replace(/^https?:\/\//, "")}#Intent;scheme=https;package=com.android.chrome;end`}
+                  >
+                    크롬으로 열기
+                  </a>
+                )}
+              </div>
+            )}
             <div className="popup-actions">
               <button type="button" className="big-button small" onClick={() => setSavedImage(null)}>
                 닫기
