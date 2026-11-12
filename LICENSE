@@ -1,0 +1,11 @@
+Copyright (c) 2026 GB-Industry. All rights reserved.
+
+이 저장소의 코드, 기관·직급·수당 문구, 기관 관인 그림과 로고는 저작권자의 허락 없이
+복제, 수정, 배포하거나 상업적으로 이용할 수 없습니다. 저장소를 열람하는 것은 자유입니다.
+
+The source code, copy, seal artwork and logos in this repository may not be copied,
+modified, redistributed or used commercially without permission from the copyright holder.
+
+예외 / Exception:
+src/fonts/ 의 Galmuri 글꼴은 Lee Minseo의 저작물이며 SIL Open Font License 1.1을 따릅니다.
+자세한 내용은 src/fonts/OFL.md 를 보세요.

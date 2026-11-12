@@ -10,6 +10,10 @@
 - `src/components/`: 화면, 로고 배너, 기관 관인, 픽셀 아이콘
 
 
-글꼴: [Galmuri](https://github.com/quiple/galmuri) (SIL Open Font License 1.1)
+글꼴: [Galmuri](https://github.com/quiple/galmuri) © Lee Minseo, SIL Open Font License 1.1 (`src/fonts/OFL.md`)
+
+## 저작권
+
+© 2026 GB-Industry. All rights reserved. 코드와 문구, 관인 그림의 무단 복제·배포·상업적 이용을 금합니다. 자세한 내용은 `LICENSE`를 보세요.
 
 모든 기관은 가상이며 실제 정부기관과 관계가 없습니다.
