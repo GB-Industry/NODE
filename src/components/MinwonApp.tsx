@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toPng } from "html-to-image";
+import { track } from "@/lib/analytics";
 import { appointmentFromCode, formatManwon, newCode, type Appointment } from "@/lib/draw";
 import { AGENCIES, DAILY_LIMIT, SPECIAL_POST_CHANCE, TIERS } from "@/lib/node-data";
 import AgencySeal from "./AgencySeal";
@@ -164,6 +165,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     setStored(s);
     setOrigin(window.location.origin);
     setNow(new Date());
+    if (sharedCode) track("view_shared", { tier: appointmentFromCode(sharedCode).tier.id });
     if (!sharedCode && s.lastCode) {
       setAppointment(appointmentFromCode(s.lastCode));
       setIssuedOn(parseDateParam(s.lastDate));
@@ -211,6 +213,14 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     setStored(used);
     writeStored(used);
     window.history.replaceState(null, "", "/");
+    track("appoint", {
+      tier: next.tier.id,
+      agency: next.agency,
+      rank: next.specialPost ?? next.rank,
+      special_post: Boolean(next.specialPost),
+      draw_count: used.used,
+      from_shared: isShared,
+    });
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const connectMs = reduced ? 0 : 520;
@@ -260,7 +270,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
       );
       if (next.specialPost) setPopupOpen(true);
     });
-  }, [busy, remaining, stored.used]);
+  }, [busy, remaining, stored.used, isShared]);
 
   const saveImage = useCallback(async () => {
     if (!noticeRef.current || !appointment) return;
@@ -271,6 +281,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
       a.href = dataUrl;
       a.download = `NODE_발령통지_${appointment.code}.png`;
       a.click();
+      track("share", { method: "save_image", content_type: "appointment", item_id: appointment.code });
       setStatus("발령 통지서를 이미지로 저장했습니다.");
     } catch {
       setStatus("이미지를 만들지 못했습니다. 화면을 캡처해 공유해 주세요.");
@@ -286,6 +297,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     if (!appointment) return;
     shareReturnRef.current = document.activeElement as HTMLElement | null;
     setShareOpen(true);
+    track("open_share", { tier: appointment.tier.id });
     loadKakao().catch(() => {});
   }, [appointment]);
 
@@ -308,7 +320,10 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     return () => window.removeEventListener("keydown", onKey);
   }, [shareOpen, closeShare]);
 
-  const openWindow = (url: string) => window.open(url, "_blank", "noopener,noreferrer,width=620,height=560");
+  const openWindow = (method: string, url: string) => {
+    track("share", { method, content_type: "appointment", item_id: appointment?.code ?? "" });
+    window.open(url, "_blank", "noopener,noreferrer,width=620,height=560");
+  };
   const enc = encodeURIComponent;
 
   const shareKakao = useCallback(async () => {
@@ -330,6 +345,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
           { title: "나도 발령받기", link: { mobileWebUrl: origin, webUrl: origin } },
         ],
       });
+      track("share", { method: "kakao", content_type: "appointment", item_id: appointment.code });
       setStatus("카카오톡 공유 창을 열었습니다.");
     } catch {
       setStatus("카카오톡 공유를 불러오지 못했습니다. 링크 복사로 공유해 주세요.");
@@ -339,6 +355,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const copyLink = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      track("share", { method: "copy_link", content_type: "appointment" });
       setStatus("발령 통지 주소를 클립보드에 복사했습니다.");
     } catch {
       setStatus("복사하지 못했습니다. 주소창의 주소를 직접 복사해 주세요.");
@@ -357,6 +374,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
         if (navigator.canShare?.({ files: [file] })) files = [file];
       }
       await navigator.share({ title: "NODE 인사발령 통지", text: shareText, url: shareUrl, ...(files ? { files } : {}) });
+      track("share", { method: "native", content_type: "appointment", item_id: appointment.code });
       setStatus("공유를 마쳤습니다.");
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -777,7 +795,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
                 ref={KAKAO_KEY ? undefined : shareFirstRef}
                 type="button"
                 className="big-button small share-btn"
-                onClick={() => openWindow(`https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`)}
+                onClick={() => openWindow("x", `https://twitter.com/intent/tweet?text=${enc(shareText)}&url=${enc(shareUrl)}`)}
               >
                 <span>X (트위터)</span>
                 <MarkX className="share-mark" />
@@ -785,7 +803,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
               <button
                 type="button"
                 className="big-button small share-btn"
-                onClick={() => openWindow(`https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}`)}
+                onClick={() => openWindow("facebook", `https://www.facebook.com/sharer/sharer.php?u=${enc(shareUrl)}`)}
               >
                 <span>페이스북</span>
                 <MarkFacebook className="share-mark" />
@@ -793,7 +811,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
               <button
                 type="button"
                 className="big-button small share-btn"
-                onClick={() => openWindow(`https://band.us/plugin/share?body=${enc(`${shareText}\n${shareUrl}`)}&route=${enc(origin)}`)}
+                onClick={() => openWindow("band", `https://band.us/plugin/share?body=${enc(`${shareText}\n${shareUrl}`)}&route=${enc(origin)}`)}
               >
                 <span>네이버 밴드</span>
                 <MarkBand className="share-mark" />

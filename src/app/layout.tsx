@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Do_Hyeon } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
+import { GA_ID } from "@/lib/analytics";
 import { SITE_URL as siteUrl } from "@/lib/site-url";
 
 const galmuri11 = localFont({
@@ -70,6 +72,17 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="ko" className={`${galmuri11.variable} ${galmuri14.variable} ${seal.variable}`}>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        {GA_ID && (
+          <>
+            {/* gtag를 화면보다 먼저 준비해, 첫 화면에서 보내는 이벤트도 빠지지 않게 한다. */}
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`,
+              }}
+            />
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+          </>
+        )}
         {children}
       </body>
     </html>
