@@ -120,6 +120,18 @@ function topShare(tierId: string) {
   return TIERS.slice(i).reduce((sum, t) => sum + t.weight, 0);
 }
 
+const IMAGE_OPTIONS = { pixelRatio: 2, backgroundColor: "#ffffff" };
+
+/** 발령 통지서 표를 PNG 데이터 주소로 그린다. 오래 걸리면 멈춘 채 두지 않고 실패로 돌린다. */
+async function renderNotice(node: HTMLElement) {
+  // 아이폰 사파리는 첫 그림에서 글꼴이 빠지는 일이 있어 한 번 미리 그려 둔다.
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) await toPng(node, IMAGE_OPTIONS).catch(() => {});
+  return Promise.race([
+    toPng(node, IMAGE_OPTIONS),
+    new Promise<never>((_, reject) => window.setTimeout(() => reject(new Error("timeout")), 20000)),
+  ]);
+}
+
 function untilMidnight(now: Date) {
   const next = new Date(now);
   next.setHours(24, 0, 0, 0);
@@ -147,6 +159,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
   const [stamped, setStamped] = useState(Boolean(sharedCode));
   const [shareOpen, setShareOpen] = useState(false);
   const [canNativeShare, setCanNativeShare] = useState(false);
+  const [savedImage, setSavedImage] = useState<string | null>(null); // 휴대폰: 길게 눌러 저장할 통지서 이미지
   const [issuedOn, setIssuedOn] = useState<Date | null>(() => parseDateParam(sharedDate));
   const [live, setLive] = useState(false); // 이번 방문에서 직접 신청한 결과일 때만 수신·날인 동작을 재생한다
 
@@ -276,12 +289,19 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     if (!noticeRef.current || !appointment) return;
     setStatus("이미지로 저장하는 중...");
     try {
-      const dataUrl = await toPng(noticeRef.current, { pixelRatio: 2, backgroundColor: "#ffffff" });
+      const dataUrl = await renderNotice(noticeRef.current);
+      track("share", { method: "save_image", content_type: "appointment", item_id: appointment.code });
+      // 휴대폰(특히 카카오톡·인스타 속 브라우저)은 내려받기를 무시하므로, 이미지를 띄워 길게 눌러 저장하게 한다.
+      if (window.matchMedia("(pointer: coarse)").matches) {
+        setShareOpen(false);
+        setSavedImage(dataUrl);
+        setStatus("이미지를 길게 눌러 저장해 주세요.");
+        return;
+      }
       const a = document.createElement("a");
       a.href = dataUrl;
       a.download = `NODE_발령통지_${appointment.code}.png`;
       a.click();
-      track("share", { method: "save_image", content_type: "appointment", item_id: appointment.code });
       setStatus("발령 통지서를 이미지로 저장했습니다.");
     } catch {
       setStatus("이미지를 만들지 못했습니다. 화면을 캡처해 공유해 주세요.");
@@ -368,7 +388,7 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
     try {
       let files: File[] | undefined;
       if (noticeRef.current) {
-        const dataUrl = await toPng(noticeRef.current, { pixelRatio: 2, backgroundColor: "#ffffff" });
+        const dataUrl = await renderNotice(noticeRef.current);
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], `NODE_발령통지_${appointment.code}.png`, { type: "image/png" });
         if (navigator.canShare?.({ files: [file] })) files = [file];
@@ -764,6 +784,33 @@ export default function MinwonApp({ sharedCode, sharedDate }: { sharedCode: stri
             >
               확인
             </button>
+          </div>
+        </div>
+      )}
+
+      {savedImage && appointment && (
+        <div className="popup save-popup" role="dialog" aria-modal="false" aria-labelledby="save-title">
+          <div className="titlebar">
+            <span id="save-title" className="titlebar-text">
+              발령 통지서 저장
+            </span>
+            <button type="button" className="tb-btn tb-close" onClick={() => setSavedImage(null)} aria-label="닫기">
+              <svg width="8" height="7" viewBox="0 0 8 7" shapeRendering="crispEdges" aria-hidden>
+                <path fill="#000" d="M0 0h2v1h1v1h2V1h1V0h2v1H7v1H6v1H5v1h1v1h1v1h1v1H6V6H5V5H3v1H2v1H0V6h1V5h1V4h1V3H2V2H1V1H0z" />
+              </svg>
+            </button>
+          </div>
+          <div className="share-body">
+            <p className="share-lead">
+              아래 이미지를 <strong>길게 눌러</strong> &lsquo;사진에 저장&rsquo; 또는 &lsquo;이미지 저장&rsquo;을 고르세요.
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element -- 방금 그린 데이터 주소라 next/image가 필요 없다 */}
+            <img className="save-image" src={savedImage} alt={`${appointment.agency} 발령 통지서`} />
+            <div className="popup-actions">
+              <button type="button" className="big-button small" onClick={() => setSavedImage(null)}>
+                닫기
+              </button>
+            </div>
           </div>
         </div>
       )}

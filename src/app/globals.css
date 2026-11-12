@@ -1058,6 +1058,24 @@ hr {
   grid-column: 1 / -1;
 }
 
+/* 휴대폰 이미지 저장 창: 길게 눌러 저장 */
+
+.save-popup {
+  top: 50%;
+  width: min(420px, calc(100vw - 24px));
+}
+
+.save-image {
+  display: block;
+  width: 100%;
+  max-height: 62vh;
+  object-fit: contain;
+  border: 2px solid #808080;
+  background: #ffffff;
+  -webkit-touch-callout: default;
+  user-select: auto;
+}
+
 .share-note {
   margin: 12px 0 0;
   color: var(--muted);
